@@ -1,14 +1,15 @@
 from ultralytics import YOLO
 import cv2
+import pickle 
 
-class PlayerTracker:
+class PlayerTracker: #Classe per il tracciamento dei giocatori
 
     def __init__(self, model_path):
         self.model = YOLO(model_path)
 
     def detect_multiple_frames(self, frames): #Ritorna la lista delle detections di ciascun frame
 
-        player_detections = []
+        player_detections = [] 
 
         for frame in frames:
             player_dict = self.detect_frame(frame)
@@ -18,14 +19,17 @@ class PlayerTracker:
 
     def detect_frame(self, frame): #Ritorna la lista delle detection di un singolo frame
 
-        results = self.track(frame, persist=True)[0] 
+        results = self.model.track(frame, persist=True)[0] 
+        #La funzione track() prende in input un frame e restituisce una lista di oggetti rilevati in quel frame. L'indice 0 è utilizzato per ottenere le informazioni sui box, le classi e gli id degli oggetti rilevati.
         #Se il parametro persist è impostato su True, la funzione manterrà informazioni sugli oggetti tracciati da frame precedenti, permettendo così di seguire oggetti in movimento attraverso più frame.
-        #Bisogna inoltre estrarre solo le informazioni relative alle persone, che hanno box id = 0
+        #Bisogna inoltre estrarre solo le informazioni relative alle persone, che hanno box_cls_id = 0
 
         id_name_dict = results.names
 
         player_dict = {}
         for box in results.boxes:
+            if box.id is None:
+                continue
             track_id = int(box.id.tolist()[0])
             result = box.xyxy.tolist()[0] #Per ottenere le coordinate dei bounding box in formato xmin ymin, xmax, ymax
             object_cls_id = box.cls.tolist()[0]
@@ -48,7 +52,7 @@ class PlayerTracker:
             #Draw Bounding Boxes
             for track_id, bbox in player_dict.items():
                 x1, y1, x2, y2 = bbox
-                cv2.putText(frame, f"Player ID: {track_id}", (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                cv2.putText(frame, f"Player ID: {track_id}", (int(x1), int(y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
                 cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2) #Il 2 indica che sarà colorato solo il bordo
             output_video_frames.append(frame)
 
