@@ -22,7 +22,7 @@ def save_video(output_video_frames, output_video_path): #Salva il video
     height = output_video_frames[0].shape[0]
 
     # Configura il writer per il video di output
-    fourcc = cv2.VideoWriter_fourcc(*'MJPG')  # Codec per il video di output
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec per il video di output
     out = cv2.VideoWriter(output_video_path, fourcc, 24, (width, height)) 
 
     for frame in output_video_frames:
