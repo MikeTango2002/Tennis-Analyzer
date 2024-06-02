@@ -84,10 +84,14 @@ class CourtLineDetector:
                 bottom_right_y = min(image.shape[0], y + window_size)
 
                 # Estrai la regione di interesse (ROI) intorno al keypoint
-                roi = img_rgb[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
+                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                roi = gray[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
 
                 # Applica il filtro di Canny per l'edge detection sulla ROI
-                edges = cv2.Canny(roi, threshold1=50, threshold2=150)
+                edges = cv2.Canny(roi, threshold1=150, threshold2=50)
+                #Soglia alta (threshold1): Qualsiasi pixel con un gradiente maggiore di questa soglia viene immediatamente classificato come un bordo. Questa soglia è spesso chiamata "soglia alta".
+                #Soglia bassa (threshold2): I pixel con un gradiente inferiore a questa soglia vengono ignorati e non sono considerati bordi. Questa soglia è spesso chiamata "soglia bassa".
+                #Isteresi: I pixel con un gradiente tra threshold1 e threshold2 sono classificati come bordi solo se sono collegati a un pixel che è già stato classificato come bordo (ovvero, un pixel con un gradiente maggiore di threshold1).
 
                 # Trova i contorni nella ROI
                 contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

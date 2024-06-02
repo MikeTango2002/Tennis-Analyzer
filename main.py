@@ -3,6 +3,7 @@ from utils import (read_video,
 
 from trackers import PlayerTracker, BallTracker
 from court_line_detector import CourtLineDetector
+from mini_court import MiniCourt
 
 import cv2
 
@@ -36,12 +37,15 @@ def main():
                                                                     read_from_stub=True, 
                                                                     stub_path='tracker_stubs/court_keypoints.pkl',
                                                                     edge_detection=True,
-                                                                    num_frames=5,
-                                                                    window_size=30
+                                                                    num_frames=10,
+                                                                    window_size=28
                                                                     )
     
     # Filter Players
     player_detections = player_tracker.choose_and_filter_players(court_keypoints[0], player_detections) #Lo applico a court keypoints del primo frame, poichè i keypoints non variano da frame a frame
+
+    # Mini Court
+    mini_court = MiniCourt(video_frames[0])
 
     # Draw output
 
@@ -53,6 +57,10 @@ def main():
     ## Draw Court Keypoints
 
     output_video_frames = court_line_detector.draw_keypoints_on_video(output_video_frames, court_keypoints)
+
+    ## Draw Mini Court
+
+    output_video_frames = mini_court.draw_mini_court(output_video_frames)
 
     ## Draw Frame Number on top left corner
 
