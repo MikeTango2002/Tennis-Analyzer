@@ -1,13 +1,52 @@
 from ultralytics import YOLO
 import cv2
 import pickle 
+import sys
+sys.path.append('../') #Per poter vedere i moduli presenti in utils
+from utils import get_center_of_bbox, measure_distance
 
 class PlayerTracker: #Classe per il tracciamento dei giocatori
 
     def __init__(self, model_path):
         self.model = YOLO(model_path)
 
-    def detect_multiple_frames(self, frames, read_from_stub=False, stub_path=None): #Ritorna la lista delle detections di ciascun frame
+    def choose_and_filter_players(self, court_keypoints, player_detections): 
+        #Ritorna le detections dei giocatori, che sono le persone che si trovano all'interno del campo
+
+        player_detections_first_frame = player_detections[0] #Prende le detections del primo frame
+        chosen_players = self.choose_players(court_keypoints, player_detections_first_frame) 
+        filtered_player_detections = []
+        for player_dict in player_detections:
+            filtered_player_dict = {track_id: bbox for track_id, bbox in player_dict.items() if track_id in chosen_players}
+            filtered_player_detections.append(filtered_player_dict)
+        return filtered_player_detections
+
+    def choose_players(self, court_keypoints, player_dict):
+        distances = [] #Lista delle distanze tra i giocatori e i keypoints del campo (tuple del tipo: track_id, min_distance)
+        for track_id, bbox in player_dict.items():
+            player_center = get_center_of_bbox(bbox) #Calcola il centro del bounding box del giocatore
+            
+            #Calcola la distanza tra il centro del bounding box del giocatore e i keypoints del campo
+            min_distance = float('inf')
+            for i in range(0, len(court_keypoints), 2):
+                court_keypoint = (court_keypoints[i], court_keypoints[i + 1])
+                distance = measure_distance(player_center, court_keypoint)
+                if distance < min_distance:
+                    min_distance = distance
+            distances.append((track_id, min_distance))
+        
+        #Ordina le distanze in ordine crescente
+        distances.sort(key=lambda x: x[1]) 
+
+        #Prendi i primi 2 track_id, che sono i giocatori
+
+        chosen_players = [distances[0][0], distances[1][0]]
+
+        return chosen_players
+        
+
+    def detect_multiple_frames(self, frames, read_from_stub=False, stub_path=None): 
+        #Ritorna la lista delle detections di ciascun frame
 
         player_detections = [] 
 
