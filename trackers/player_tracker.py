@@ -7,13 +7,22 @@ class PlayerTracker: #Classe per il tracciamento dei giocatori
     def __init__(self, model_path):
         self.model = YOLO(model_path)
 
-    def detect_multiple_frames(self, frames): #Ritorna la lista delle detections di ciascun frame
+    def detect_multiple_frames(self, frames, read_from_stub=False, stub_path=None): #Ritorna la lista delle detections di ciascun frame
 
         player_detections = [] 
 
-        for frame in frames:
+        if read_from_stub and stub_path is not None: 
+            with open(stub_path, 'rb') as f:
+                player_detections = pickle.load(f)
+            return player_detections
+
+        for frame in frames: #Per ogni frame, rileva i giocatori e salva le detections in una lista
             player_dict = self.detect_frame(frame)
             player_detections.append(player_dict)
+
+        if stub_path is not None: #Se è stato specificato un percorso per il file stub, salva le detections in un file stub
+            with open(stub_path, 'wb') as f:
+                pickle.dump(player_detections, f)
 
         return player_detections
 
@@ -52,7 +61,7 @@ class PlayerTracker: #Classe per il tracciamento dei giocatori
             #Draw Bounding Boxes
             for track_id, bbox in player_dict.items():
                 x1, y1, x2, y2 = bbox
-                cv2.putText(frame, f"Player ID: {track_id}", (int(x1), int(y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+                cv2.putText(frame, f"Player ID: {track_id}", (int(bbox[0]), int(bbox[1] - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
                 cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2) #Il 2 indica che sarà colorato solo il bordo
             output_video_frames.append(frame)
 
