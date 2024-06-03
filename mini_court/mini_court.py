@@ -3,13 +3,19 @@ import numpy as np
 import sys
 sys.path.append('../')
 import constants
-from utils import (convert_meters_to_pixel_distance, convert_pixel_distance_to_meters)
+from utils import (convert_meters_to_pixel_distance, 
+                   convert_pixel_distance_to_meters, 
+                   get_foot_position, 
+                   get_closest_keypoint_index,
+                   measure_xy_distance,
+                   get_center_of_bbox,
+                   measure_distance)
 
 class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
     def __init__(self, frame): #Il frame è il frame iniziale del video
         self.drawing_rectangle_width = 250 #Le misure sono in pixel
         self.drawing_rectangle_height = 500
-        self.buffer = 50 #distanza dal bordo del frame
+        self.buffer = 70 #distanza dal bordo del frame
         self.padding_court = 20
 
         self.set_canvas_background_box_position(frame)
@@ -22,7 +28,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
         frame = frame.copy()
 
         # calcolo le coordinate del rettangolo contenente il mini court all'interno del frame
-        self.end_x = frame.shape[1] - self.buffer
+        self.end_x = frame.shape[1] - (self.buffer + 20)
         self.end_y = self.buffer + self.drawing_rectangle_height
         self.start_x = self.end_x - self.drawing_rectangle_width
         self.start_y = self.end_y - self.drawing_rectangle_height
@@ -31,14 +37,14 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
     def set_mini_court_position(self):
 
         self.court_start_x = self.start_x + self.padding_court
-        self.court_start_y = self.start_y + self.padding_court
+        self.court_start_y = self.start_y + self.padding_court 
         self.court_end_x = self.end_x - self.padding_court
-        self.court_end_y = self.end_y - self.padding_court
+        self.court_end_y = self.end_y - self.padding_court 
 
         self.court_drawing_width = self.court_end_x - self.court_start_x
 
     
-    def convert_meters_to_pixels(self, meters):
+    def convert_meters_to_pixels(self, meters): #Serve per ottenere uns conversione da metri a pixel del mini_court
         return convert_meters_to_pixel_distance(meters,
                                                 constants.DOUBLE_LINE_WIDTH,
                                                 self.court_drawing_width
@@ -116,7 +122,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
             (0,1),
             (8,9),
             (10,11),
-            (10,11),
+            (12,13),
             (2,3)
         ]
 
@@ -125,7 +131,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
         shapes = np.zeros_like(frame, np.uint8) #Crea un'immagine nera delle stesse dimensioni del frame
 
         #Disegna il rettangolo di sfondo
-        cv2.rectangle(shapes, (self.start_x, self.start_y), (self.end_x, self.end_y), (255, 255, 255), cv2.FILLED)
+        cv2.rectangle(shapes, (self.start_x, self.start_y - 40), (self.end_x, self.end_y + 40), (255, 255, 255), cv2.FILLED)
 
         out = frame.copy()
         alpha = 0.5 #Trasparenza del background
@@ -144,13 +150,14 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
         return out
     
     def draw_court(self, frame):
+
+        #Vengono prima disegnati i keypoints del campo
         for i in range(0, len(self.drawing_key_points), 2):
             x = int(self.drawing_key_points[i])
             y = int(self.drawing_key_points[i + 1])
             cv2.circle(frame, (x, y), 5, (0, 0, 255), -1)
 
-        #Ora vengono disegnate le linee del campo
-
+        #Poi vengono disegnate le linee del campo
         for line in self.lines:
             start_point = (int(self.drawing_key_points[line[0]*2]), int(self.drawing_key_points[line[0]*2 + 1])) #il "*2" è dovuto a come sono memorizzate le coordinate nelle tuple di self.lines
             end_point = (int(self.drawing_key_points[line[1]*2]), int(self.drawing_key_points[line[1]*2 + 1]))
@@ -164,7 +171,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
         return frame
 
     
-    def draw_mini_court(self, frames):
+    def draw_mini_court(self, frames):#Funzione che racchiude tutte le funzioni di disegno del mini campo
         
         output_frames = []
         for frame in frames:
@@ -184,4 +191,109 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
     def get_court_keypoints(self):
         return self.drawing_key_points
     
+    def compute_homography_matrix(self, original_keypoints):
+
+        original_court_keypoints = original_keypoints.copy()
+        #Trasformo l'array 1d in un array 2d
+        num_points = original_court_keypoints.shape[0] // 2
+        original_court_keypoints = original_court_keypoints.reshape((num_points, 2))
+
+
+        transformed_court_keypoints = np.array(self.get_court_keypoints(), dtype='float32').copy()
+        #Trasformo l'array 1d in un array 2d
+        transformed_court_keypoints = transformed_court_keypoints.reshape((num_points, 2))
+
+
+        self.H, _ = cv2.findHomography(original_court_keypoints, transformed_court_keypoints)
+
+
     
+    def get_mini_court_coordinates(self, object_position):
+        #In questa funzione, converto le coordinate di un oggetto (pallina o giocatore) rispetto al campo di tennis in coordinate rispetto al mini campo
+        #Per fare ciò utilizzo la matrice omografica calcolata in precedenza
+
+        # Trasforma le posizioni dei giocatori
+        x, y = object_position
+
+        original_point_homogeneous = np.array([x, y, 1], dtype='float32') #Aggiunge la coordinata z=1 per rendere la posizione omogenea
+
+        transformed_point_homogeneous = np.dot(self.H, original_point_homogeneous)
+
+        # Normalizza le coordinate trasformate
+        transformed_point = transformed_point_homogeneous / transformed_point_homogeneous[2]
+
+        # Ottieni le coordinate cartesiane trasformate
+        transformed_x, transformed_y = transformed_point[:2]
+
+        return (transformed_x, transformed_y)
+        
+        
+
+    def convert_bounding_boxes_to_mini_court_coordinates(self, players_boxes, ball_boxes, original_court_keypoints, frames_with_ball_hit):
+
+        self.compute_homography_matrix(original_court_keypoints)
+
+
+
+        output_players_boxes = []
+        output_ball_boxes = []
+
+        ball_bounce_num = 0
+        current_output_ball_boxes_dict = {}
+        
+        for frame_num, players_bbox in enumerate(players_boxes):
+
+
+            current_output_ball_boxes = current_output_ball_boxes_dict.copy()
+
+
+            if frame_num in frames_with_ball_hit:
+                
+                #Calcolo delle coordinate della pallina
+                ball_box = ball_boxes[frame_num][1]
+                ball_position = get_center_of_bbox(ball_box)
+                player_id_shot = 1
+                min_distance = 1000000
+                position = (0,0)
+                for player_id, bbox in players_bbox.items():
+                    foot_position = get_foot_position(bbox)
+                    distance = measure_distance(ball_position, foot_position)
+                    if distance < min_distance:
+                        player_id_shot = player_id
+                        position = foot_position
+                        min_distance = distance
+                mini_court_ball_position = self.get_mini_court_coordinates(position)
+                
+                current_output_ball_boxes_dict[ball_bounce_num]= mini_court_ball_position
+                ball_bounce_num = ball_bounce_num + 1
+
+            current_output_ball_boxes = current_output_ball_boxes_dict.copy()
+        
+            output_ball_boxes.append(current_output_ball_boxes)
+
+            #Calcolo delle coordinate dei giocatori
+            output_players_bboxes_dict = {}
+
+            for player_id, bbox in players_bbox.items():
+
+                foot_position = get_foot_position(bbox)
+
+                mini_court_player_position = self.get_mini_court_coordinates(foot_position) 
+                                                                             
+                output_players_bboxes_dict[player_id] = mini_court_player_position    
+
+            output_players_boxes.append(output_players_bboxes_dict)
+
+        return output_players_boxes, output_ball_boxes
+    
+
+    def draw_points_on_mini_court(self, frames, positions, color=(0,255,0)):
+        for frame_num, frame in enumerate(frames):
+            for _, position in positions[frame_num].items():
+                if len(positions[frame_num]) == 0:
+                    continue
+                x,y = position
+                x= int(x)
+                y= int(y)
+                cv2.circle(frame, (x,y), 5, color, -1)
+        return frames

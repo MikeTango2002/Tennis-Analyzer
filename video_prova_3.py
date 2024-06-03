@@ -10,21 +10,21 @@ import cv2
 
 def main():
     # Read Video
-    input_video_path = "input_videos/input_video.mp4"
-    video_frames, fps = read_video(input_video_path)
+    input_video_path = "input_videos/video_test_3.mp4"
+    video_frames,fps = read_video(input_video_path)
 
     # Detect Players and Ball
     player_tracker = PlayerTracker(model_path='models/yolov8x.pt')
     player_detections = player_tracker.detect_multiple_frames(video_frames,
-                                                              read_from_stub=True , #Alla prima esecuzione, impostare a False
-                                                              stub_path='tracker_stubs/player_detections.pkl'
+                                                              read_from_stub=True, #Alla prima esecuzione, impostare a False
+                                                              stub_path='tracker_stubs/player_detections_video_test_3.pkl'
                                                               )
     
 
-    ball_tracker = BallTracker(model_path='models/tennis_ball_detection_model_yolo5_last.pt')
+    ball_tracker = BallTracker(model_path='models/tennis_ball_detection_model_yolo5_best.pt')
     ball_detections = ball_tracker.detect_multiple_frames(video_frames,
-                                                              read_from_stub=True, 
-                                                              stub_path='tracker_stubs/ball_detections.pkl'
+                                                              read_from_stub=True, #Alla prima esecuzione, impostare a False
+                                                              stub_path='tracker_stubs/ball_detections_video_test_3.pkl'
                                                               )
     
     ball_detections = ball_tracker.interpolate_ball_positions(ball_detections)
@@ -32,11 +32,11 @@ def main():
     # Detect Court Lines 
     court_line_detector = CourtLineDetector(model_path='models/keypoints_model_v2.pth')
     court_keypoints = court_line_detector.predict_multiple_frames(video_frames,
-                                                                    read_from_stub=False, 
-                                                                    stub_path='tracker_stubs/court_keypoints.pkl',
+                                                                    read_from_stub=False, #Alla prima esecuzione, impostare a False
+                                                                    stub_path='tracker_stubs/court_keypoints_video_test_3.pkl',
                                                                     edge_detection=True,
-                                                                    num_frames=10,
-                                                                    window_size=28
+                                                                    num_frames=30,
+                                                                    window_size=30
                                                                     )
     
     # Filter Players
@@ -50,7 +50,7 @@ def main():
     ball_bounce_frames = ball_tracker.get_ball_bounce_frames(ball_detections)
 
     # Convert positions to mini court positions
-    player_mini_court_detections, ball_mini_court_detections = mini_court.convert_bounding_boxes_to_mini_court_coordinates(player_detections, ball_detections, court_keypoints[0], ball_bounce_frames) 
+    player_mini_court_detections, ball_mini_court_detections = mini_court.convert_bounding_boxes_to_mini_court_coordinates(player_detections, ball_detections, court_keypoints[0], ball_shot_frames) 
     
     
     # Draw output
@@ -76,7 +76,7 @@ def main():
         cv2.putText(frame, f"Frame: {i}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
 
-    save_video(output_video_frames, "output_videos/output_video.mp4", 24)
+    save_video(output_video_frames, "output_videos/output_video_test_3.mp4", 24)
     
     
 
