@@ -1,7 +1,7 @@
 import torch 
 import torchvision.transforms as transforms
 import torchvision.models as models
-from torchvision.models import ResNet50_Weights
+from torchvision.models import ResNet18_Weights
 import cv2
 import pickle
 
@@ -9,9 +9,9 @@ class CourtLineDetector:
 
     def __init__(self, model_path):
 
-        self.model = models.resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+        self.model = models.resnet18(weights=None)
         self.model.fc = torch.nn.Linear(self.model.fc.in_features, 14 * 2)
-        self.model.load_state_dict(torch.load(model_path, map_location='cpu')) #carica i pesi addestrati precedentemente e assegna questi pesi al modello corrente
+        self.model.load_state_dict(torch.load(model_path)) #carica i pesi addestrati precedentemente e assegna questi pesi al modello corrente
 
         self.transform = transforms.Compose([ #Lista delle trasformazioni da applicare all'immagine (sono le stesse del file di training)
             transforms.ToPILImage(), #Trasforma l'immagine in un oggetto PIL (Python Imaging Library)
@@ -19,6 +19,9 @@ class CourtLineDetector:
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) # sono le medie e le deviazioni standard dei canali di colore rosso, verde e blu (RGB) calcolate su un grande dataset di immagini, comunemente il dataset ImageNet.
         ])
+
+        self.model.eval() #Imposta il modello in modalità di valutazione
+
 
     def predict_multiple_frames(self, frames, read_from_stub=False, stub_path=None, edge_detection=False, window_size=30, num_frames=3):
 
@@ -57,6 +60,7 @@ class CourtLineDetector:
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) #Converte l'immagine da BGR a RGB
         image_tensor = self.transform(img_rgb).unsqueeze(0) #Applica le trasformazioni all'immagine e aggiunge una dimensione all'inizio del tensore per renderlo compatibile con il modello che prende in input un batch (lista) di immagini
 
+        
         with torch.no_grad(): #Poichè stiamo facendo inferenza, non abbiamo bisogno di calcolare i gradienti
             output = self.model(image_tensor)
         
