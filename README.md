@@ -10,5 +10,6 @@ CEMENTO:
 ERBA:
 
 ![Immagine_2 1](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/2f20e651-fa42-462c-959c-8a7baa50b0a6)
-![Immagine_2 2](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/08b48cd7-68d9-4ae4-b889-957a9b01974b)
+![Immagine_2 2](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/f637a5ff-a6d4-4b13-b2bd-829bbfd4f11b)
 ![Immagine_2 3](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/7ebbdda7-38b1-4309-a4d9-b63bf2566fd5)
+
