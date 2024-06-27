@@ -138,7 +138,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
 
         #Viene creata una maschera booleana dalla matrice shapes. 
         #Questo significa che ogni pixel che è diverso da zero in shapes sarà considerato True nella maschera.
-        #Sonno considerati True solo i pixel bianchi del rettangolo
+        #Sono considerati True solo i pixel bianchi del rettangolo
         mask = shapes.astype(bool) 
 
         #La seguente funzione  viene utilizzata per combinare il frame originale e l'immagine shapes 
@@ -191,7 +191,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
     def get_court_keypoints(self):
         return self.drawing_key_points
     
-    def compute_homography_matrix(self, original_keypoints):
+    def compute_homography_matrix(self, original_keypoints): #Calcola la matrice omografica per trasformare le coordinate del campo di tennis in coordinate del mini campo
 
         original_court_keypoints = original_keypoints.copy()
         #Trasformo l'array 1d in un array 2d
@@ -229,7 +229,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
         
         
 
-    def convert_bounding_boxes_to_mini_court_coordinates(self, players_boxes, ball_boxes, original_court_keypoints, frames_with_ball_hit):
+    def convert_bounding_boxes_to_mini_court_coordinates(self, players_boxes, ball_boxes, original_court_keypoints, frames_with_ball_hit): #Converte le coordinate dei bounding boxes dei giocatori e della pallina in coordinate del mini campo
 
         self.compute_homography_matrix(original_court_keypoints)
 
@@ -287,7 +287,7 @@ class MiniCourt(): #Classe per disegnare il mini campo da tennis su schermo
         return output_players_boxes, output_ball_boxes
     
 
-    def draw_points_on_mini_court(self, frames, positions, color=(0,255,0)):
+    def draw_points_on_mini_court(self, frames, positions, color=(0,255,0)): #Disegna i keypoints sul mini campo
         for frame_num, frame in enumerate(frames):
             for _, position in positions[frame_num].items():
                 if len(positions[frame_num]) == 0:
