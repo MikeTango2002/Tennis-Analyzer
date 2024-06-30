@@ -22,25 +22,45 @@ class PlayerTracker: #Classe per il tracciamento dei giocatori
         return filtered_player_detections
 
     def choose_players(self, court_keypoints, player_dict):
-        distances = [] #Lista delle distanze tra i giocatori e i keypoints del campo (tuple del tipo: track_id, min_distance)
+        distances_under_the_net = [] #Lista delle distanze tra i giocatori e i keypoints del campo (tuple del tipo: track_id, min_distance)
+        distances_over_the_net = []
         for track_id, bbox in player_dict.items():
             player_center = get_center_of_bbox(bbox) #Calcola il centro del bounding box del giocatore
             
             #Calcola la distanza tra il centro del bounding box del giocatore e i keypoints del campo
-            min_distance = float('inf')
+            min_distance_under_the_net = float('inf')
+            min_distance_over_the_net = float('inf')
+            j = 0
+            keypoints_under_the_net = []
+            keypoints_over_the_net = []
+
             for i in range(0, len(court_keypoints), 2):
                 court_keypoint = (court_keypoints[i], court_keypoints[i + 1])
+                if j in [0, 1, 4, 6, 8, 9, 12]:
+                    keypoints_over_the_net.append(court_keypoint)
+                else:
+                    keypoints_under_the_net.append(court_keypoint)
+                j += 1
+
+            for court_keypoint in keypoints_over_the_net:
                 distance = measure_distance(player_center, court_keypoint)
-                if distance < min_distance:
-                    min_distance = distance
-            distances.append((track_id, min_distance))
+                if distance < min_distance_over_the_net:
+                    min_distance_over_the_net = distance
+            distances_over_the_net.append((track_id, min_distance_over_the_net))
+
+            for court_keypoint in keypoints_under_the_net:
+                distance = measure_distance(player_center, court_keypoint)
+                if distance < min_distance_under_the_net:
+                    min_distance_under_the_net = distance
+            distances_under_the_net.append((track_id, min_distance_under_the_net))
         
         #Ordina le distanze in ordine crescente
-        distances.sort(key=lambda x: x[1]) 
+        distances_under_the_net.sort(key=lambda x: x[1]) 
+        distances_over_the_net.sort(key=lambda x: x[1]) 
 
         #Prendi i primi 2 track_id, che sono i giocatori
 
-        chosen_players = [distances[0][0], distances[1][0]]
+        chosen_players = [distances_under_the_net[0][0], distances_over_the_net[0][0]]
 
         return chosen_players
         
