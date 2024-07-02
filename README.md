@@ -13,3 +13,8 @@ ERBA:
 ![Immagine_2 2](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/f637a5ff-a6d4-4b13-b2bd-829bbfd4f11b)
 ![Immagine_2 3](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/7ebbdda7-38b1-4309-a4d9-b63bf2566fd5)
 
+TERRA ROSSA:
+
+![immagine-3 1](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/8b8a195a-9d2c-4617-b387-5b10dfc7f391)
+![immagine_3 2](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/1b1c933a-f79c-4c5e-9476-390514b713d8)
+![immagine_3 3](https://github.com/MikeTango2002/Tennis-Analyzer/assets/159330934/fb1d58ec-6c01-4cba-8f9c-3d38b1392997)
